@@ -1,0 +1,11 @@
+﻿<Window x:Class="AccessDBSerializer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <Button Name="btnDecompose" Content="Decompose" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="btnDecompose_Click"/>
+
+        <Button Name="btnRecompose" Content="Recompose" HorizontalAlignment="Left" Margin="10,65,0,0" VerticalAlignment="Top" Width="75" Click="btnRecompose_Click"/>
+        <ListBox Name="listResults" HorizontalAlignment="Left" Height="299" Margin="104,10,0,0" VerticalAlignment="Top" Width="403"/>
+    </Grid>
+</Window>
