@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GalaSoft.MvvmLight.Messaging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,12 +28,18 @@ namespace AccessDBSerializer
 
             _vm = new MainWindowVM();
             this.DataContext = _vm;
+
+            // Register to receive status updates and show them in the results listbox
+            Messenger.Default.Register<Messaging.StatusUpdateMessage>(this, (action => Dispatcher.Invoke(
+                (Action)delegate
+            {
+                this.listResults.Items.Insert(0, DateTime.Now.ToLongTimeString() + ": " + action.MessageText);
+            })));
         }
 
         private void btnDecompose_Click(object sender, RoutedEventArgs e)
         {
             _vm.Decompose();
-            listResults.Items.Add("Finished");
         }
 
         private void btnRecompose_Click(object sender, RoutedEventArgs e)
