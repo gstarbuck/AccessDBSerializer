@@ -111,9 +111,6 @@
   <ItemGroup>
     <Content Include="Files\compose.vbs" />
     <Content Include="Files\decompose.vbs" />
-    <Content Include="Files\MetrogroDB_new1.accdb">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Resource Include="MVVMLight.Nuget.Readme.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

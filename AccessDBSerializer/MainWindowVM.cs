@@ -56,7 +56,10 @@ namespace AccessDBSerializer
             string stubADPFilename = importPath + fi.Name.Replace(fi.Extension, "") + "_stub" + fi.Extension;
 
             // Back up then replace the base file with the stub
-            File.Copy(accessDatabaseFilename, accessDatabaseFilename + ".bak", true);
+            if (fi.Exists)
+            {
+                File.Copy(accessDatabaseFilename, accessDatabaseFilename + ".bak", true);
+            }
 
             File.Copy(stubADPFilename, accessDatabaseFilename, true);
 
@@ -68,9 +71,6 @@ namespace AccessDBSerializer
 
             if (app != null)
             {
-                object doCmd = t.InvokeMember("DoCmd", System.Reflection.BindingFlags.GetProperty, null, app, null);
-                Type doCmdType = doCmd.GetType();
-
                 t.InvokeMember("OpenCurrentDatabase", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { accessDatabaseFilename });
                 t.InvokeMember("Visible", System.Reflection.BindingFlags.SetProperty, null, app, new object[] { false });
 
@@ -93,7 +93,6 @@ namespace AccessDBSerializer
                             t.InvokeMember("LoadFromText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acModule, objectName, importPath + @"\" + objectName + ".bas" });
                             break;
                         case "mac":
-
                             t.InvokeMember("LoadFromText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acMacro, objectName, importPath + @"\" + objectName + ".mac" });
                             break;
                         case "report":
@@ -107,6 +106,11 @@ namespace AccessDBSerializer
                 PublishStatusMessage("Calling Command acCmdCompileAndSaveAllModules");
                 t.InvokeMember("RunCommand", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acCmdCompileAndSaveAllModules });
 
+                PublishStatusMessage("Closing Database...");
+                t.InvokeMember("CloseCurrentDatabase", System.Reflection.BindingFlags.InvokeMethod, null, app, null);
+
+                PublishStatusMessage("Calling CompactRepair...");
+                t.InvokeMember("CompactRepair", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { accessDatabaseFilename, accessDatabaseFilename + "_" });
 
                 PublishStatusMessage("Calling Quit...");
                 t.InvokeMember("Quit", System.Reflection.BindingFlags.InvokeMethod, null, app, null);
@@ -211,7 +215,7 @@ namespace AccessDBSerializer
                     string macroName = (string)macroType.InvokeMember("Name", System.Reflection.BindingFlags.GetProperty, null, item, null);
                     PublishStatusMessage("Serializing Macro: " + macroName);
 
-                    t.InvokeMember("SaveAsText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acMacro, macroName, exportPath + @"\" + macroName + ".bas" });
+                    t.InvokeMember("SaveAsText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acMacro, macroName, exportPath + @"\" + macroName + ".mac" });
                     dctDelete.Add("MA" + macroName, AccessObjectType.acMacro);
                 }
 
@@ -229,7 +233,7 @@ namespace AccessDBSerializer
                     string reportName = (string)macroType.InvokeMember("Name", System.Reflection.BindingFlags.GetProperty, null, item, null);
                     PublishStatusMessage("Serializing Report: " + reportName);
 
-                    t.InvokeMember("SaveAsText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acReport, reportName, exportPath + @"\" + reportName + ".bas" });
+                    t.InvokeMember("SaveAsText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acReport, reportName, exportPath + @"\" + reportName + ".report" });
                     dctDelete.Add("RE" + reportName, AccessObjectType.acReport);
                 }
 
