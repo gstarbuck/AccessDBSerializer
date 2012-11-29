@@ -33,33 +33,8 @@ namespace AccessDBSerializer
             );
         }
 
-        public enum AccessObjectType
-        {
-            acDefault = -1,
-            acDiagram = 8,
-            acForm = 2,
-            acFunction = 10,
-            acMacro = 4,
-            acModule = 5,
-            acQuery = 1,
-            acReport = 3,
-            acServerView = 7,
-            acStoredProcedure = 9,
-            acTable = 0
-        }
-
         private void ExportModulesTxt(string accessDatabaseFilename, string exportPath)
-        {//Function exportModulesTxt(sADPFilename, sExportpath)
-            //    Dim myComponent
-            //    Dim sModuleType
-            //    Dim sTempname
-            //    Dim sOutstring
-
-            //    dim myType, myName, myPath, sStubADPFilename
-            //    myType = fso.GetExtensionName(sADPFilename)
-            //    myName = fso.GetBaseName(sADPFilename)
-            //    myPath = fso.GetParentFolderName(sADPFilename)
-
+        {
             FileInfo fi = new FileInfo(accessDatabaseFilename);
 
             if (exportPath == "")
@@ -67,23 +42,12 @@ namespace AccessDBSerializer
                 exportPath = fi.Directory.ToString() + @"\Source\";
             }
 
-            //    If (sExportpath = "") then
-            //        sExportpath = myPath & "\Source\"
-            //    End If
-            //    sStubADPFilename = sExportpath & myName & "_stub." & myType
-
             String stubADPFilename = exportPath + fi.Name.Replace(fi.Extension, "") + "_stub" + fi.Extension;
 
-            //'    WScript.Echo "copy stub to " & sStubADPFilename & "..."
             PublishStatusMessage("copy stub to " + stubADPFilename + "...");
 
             Trace.Write("copy stub to " + stubADPFilename + "...");
             
-            //    On Error Resume Next
-            //        fso.CreateFolder(sExportpath)
-            //    On Error Goto 0
-            //    fso.CopyFile sADPFilename, sStubADPFilename
-
             if (!Directory.Exists(exportPath))
             {
                 PublishStatusMessage("creating directory " + exportPath);
@@ -91,18 +55,6 @@ namespace AccessDBSerializer
                 Directory.CreateDirectory(exportPath);
             }
             File.Copy(accessDatabaseFilename, stubADPFilename, true);
-
-            //'    WScript.Echo "starting Access..."
-            //    Dim oApplication
-            //    Set oApplication = CreateObject("Access.Application")
-            //'    WScript.Echo "opening " & sStubADPFilename & " ..."
-            //    If (Right(sStubADPFilename,4) = ".adp") Then
-            //        oApplication.OpenAccessProject sStubADPFilename
-            //    Else
-            //        oApplication.OpenCurrentDatabase sStubADPFilename
-            //    End If
-            //    oApplication.Visible = false
-
 
             Type t = null;
             Object app = CoCreate("Access.Application", ref t);
@@ -117,21 +69,9 @@ namespace AccessDBSerializer
 
                 PublishStatusMessage("Successfully Opened Access Application");
 
-                //    dim dctDelete
-                //    Set dctDelete = CreateObject("Scripting.Dictionary")
-
                 Dictionary<string, object> dctDelete = new Dictionary<string, object>();
 
-                //'    WScript.Echo "exporting..."
                 PublishStatusMessage("Exporting...");
-                
-                //    Dim myObj
-                //    For Each myObj In oApplication.CurrentProject.AllForms
-                //'        WScript.Echo "  " & myObj.fullname
-                //        oApplication.SaveAsText acForm, myObj.fullname, sExportpath & "\" & myObj.fullname & ".form"
-                //        oApplication.DoCmd.Close acForm, myObj.fullname
-                //        dctDelete.Add "FO" & myObj.fullname, acForm
-                //    Next
 
                 object currentProject = null;
                 object allForms = null;
@@ -157,13 +97,6 @@ namespace AccessDBSerializer
                     dctDelete.Add("FO" + formName, AccessObjectType.acForm);
                 }
 
-
-                //    For Each myObj In oApplication.CurrentProject.AllModules
-                //'        WScript.Echo "  " & myObj.fullname
-                //        oApplication.SaveAsText acModule, myObj.fullname, sExportpath & "\" & myObj.fullname & ".bas"
-                //        dctDelete.Add "MO" & myObj.fullname, acModule
-                //    Next
-
                 // Process Modules
                 object allModules = null;
                 allModules = currentProjectType.InvokeMember("AllModules", System.Reflection.BindingFlags.GetProperty, null, currentProject, null);
@@ -181,12 +114,6 @@ namespace AccessDBSerializer
                     t.InvokeMember("SaveAsText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acModule, moduleName, exportPath + @"\" + moduleName + ".bas" });
                     dctDelete.Add("MO" + moduleName, AccessObjectType.acModule);
                 }
-
-                //    For Each myObj In oApplication.CurrentProject.AllMacros
-                //'        WScript.Echo "  " & myObj.fullname
-                //        oApplication.SaveAsText acMacro, myObj.fullname, sExportpath & "\" & myObj.fullname & ".mac"
-                //        dctDelete.Add "MA" & myObj.fullname, acMacro
-                //    Next
 
                 // Process Macros
                 object allMacros = null;
@@ -206,12 +133,6 @@ namespace AccessDBSerializer
                     dctDelete.Add("MA" + macroName, AccessObjectType.acMacro);
                 }
 
-                //    For Each myObj In oApplication.CurrentProject.AllReports
-                //'        WScript.Echo "  " & myObj.fullname
-                //        oApplication.SaveAsText acReport, myObj.fullname, sExportpath & "\" & myObj.fullname & ".report"
-                //        dctDelete.Add "RE" & myObj.fullname, acReport
-                //    Next
-
                 // Process Reports
                 object allReports = null;
                 allReports = currentProjectType.InvokeMember("AllReports", System.Reflection.BindingFlags.GetProperty, null, currentProject, null);
@@ -230,12 +151,7 @@ namespace AccessDBSerializer
                     dctDelete.Add("RE" + reportName, AccessObjectType.acReport);
                 }
 
-                //'    WScript.Echo "deleting..."
-                //    dim sObjectname
-                //    For Each sObjectname In dctDelete
-                //'        WScript.Echo "  " & Mid(sObjectname, 3)
-                //        oApplication.DoCmd.DeleteObject dctDelete(sObjectname), Mid(sObjectname, 3)
-                //    Next
+                // Clean out the database so it can be compacted
                 PublishStatusMessage("Deleting...");
                 foreach (var item in dctDelete)
                 {
@@ -243,10 +159,7 @@ namespace AccessDBSerializer
                     doCmdType.InvokeMember("DeleteObject", System.Reflection.BindingFlags.InvokeMethod, null, doCmd, new object[] { item.Value, item.Key.Substring(2) });
                 }
 
-                //    oApplication.CloseCurrentDatabase
-                //    oApplication.CompactRepair sStubADPFilename, sStubADPFilename & "_"
-                //    oApplication.Quit
-
+                // Cleanup
                 PublishStatusMessage("Closing Database...");
                 t.InvokeMember("CloseCurrentDatabase", System.Reflection.BindingFlags.InvokeMethod, null, app, null);
 
@@ -256,17 +169,11 @@ namespace AccessDBSerializer
                 PublishStatusMessage("Calling Quit...");
                 t.InvokeMember("Quit", System.Reflection.BindingFlags.InvokeMethod, null, app, null);
 
-                //    fso.CopyFile sStubADPFilename & "_", sStubADPFilename
-                //    fso.DeleteFile sStubADPFilename & "_"
-
                 PublishStatusMessage("Cleaning up temp files...");
                 File.Copy(stubADPFilename + "_", stubADPFilename, true);
                 File.Delete(stubADPFilename + "_");
 
-                //    WScript.Echo "Finished"
                 PublishStatusMessage("Finished");
-                //End Function
-
             }
         }
 
