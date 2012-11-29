@@ -17,6 +17,7 @@ namespace AccessDBSerializer
         acReport = 3,
         acServerView = 7,
         acStoredProcedure = 9,
-        acTable = 0
+        acTable = 0,
+        acCmdCompileAndSaveAllModules = 125
     }
 }

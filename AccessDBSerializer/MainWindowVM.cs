@@ -25,12 +25,94 @@ namespace AccessDBSerializer
 
             Task.Factory.StartNew(() =>
                 {
-                    String exportPath = "";
-                    String accessDatabaseFilename = @"C:\Users\gstarbuck\Documents\Visual Studio 2012\Projects\AccessDBSerializer\AccessDBSerializer\Files\MetrogroDB_new1.accdb";
+                    string exportPath = "";
+                    string accessDatabaseFilename = @"C:\Users\gstarbuck\Documents\Visual Studio 2012\Projects\AccessDBSerializer\AccessDBSerializer\Files\MetrogroDB_new1.accdb";
 
                     ExportModulesTxt(accessDatabaseFilename, exportPath);
                 }
             );
+        }
+
+
+        internal void Recompose()
+        {
+            Task.Factory.StartNew(() =>
+                {
+                    string importPath = "";
+                    string accessDatabaseFilename = @"C:\Users\gstarbuck\Documents\Visual Studio 2012\Projects\AccessDBSerializer\AccessDBSerializer\Files\MetrogroDB_new1.accdb";
+
+                    ImportModulesText(accessDatabaseFilename, importPath);
+                }
+            );
+        }
+
+        private void ImportModulesText(string accessDatabaseFilename, string importPath)
+        {
+            FileInfo fi = new FileInfo(accessDatabaseFilename);
+            if (importPath == "")
+            {
+                importPath = fi.Directory.ToString() + @"\Source\";
+            }
+            string stubADPFilename = importPath + fi.Name.Replace(fi.Extension, "") + "_stub" + fi.Extension;
+
+            // Back up then replace the base file with the stub
+            File.Copy(accessDatabaseFilename, accessDatabaseFilename + ".bak", true);
+
+            File.Copy(stubADPFilename, accessDatabaseFilename, true);
+
+            // Launch Access
+            PublishStatusMessage("Starting Access");
+
+            Type t = null;
+            object app = CoCreate("Access.Application", ref t);
+
+            if (app != null)
+            {
+                object doCmd = t.InvokeMember("DoCmd", System.Reflection.BindingFlags.GetProperty, null, app, null);
+                Type doCmdType = doCmd.GetType();
+
+                t.InvokeMember("OpenCurrentDatabase", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { accessDatabaseFilename });
+                t.InvokeMember("Visible", System.Reflection.BindingFlags.SetProperty, null, app, new object[] { false });
+
+                PublishStatusMessage("Successfully Opened Access Application");
+
+                DirectoryInfo folder = new DirectoryInfo(importPath);
+
+                foreach (var file in folder.EnumerateFiles())
+                {
+                    string objectType = file.Extension.Substring(1);
+                    string objectName = file.Name.Substring(0, (file.Name.Length - file.Extension.Length));
+                    PublishStatusMessage("Importing " + objectType + " " + objectName);
+
+                    switch (objectType)
+                    {
+                        case "form":
+                            t.InvokeMember("LoadFromText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acForm, objectName, importPath + @"\" + objectName + ".form" });
+                            break;
+                        case "bas":
+                            t.InvokeMember("LoadFromText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acModule, objectName, importPath + @"\" + objectName + ".bas" });
+                            break;
+                        case "mac":
+
+                            t.InvokeMember("LoadFromText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acMacro, objectName, importPath + @"\" + objectName + ".mac" });
+                            break;
+                        case "report":
+                            t.InvokeMember("LoadFromText", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acReport, objectName, importPath + @"\" + objectName + ".report" });
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                PublishStatusMessage("Calling Command acCmdCompileAndSaveAllModules");
+                t.InvokeMember("RunCommand", System.Reflection.BindingFlags.InvokeMethod, null, app, new object[] { AccessObjectType.acCmdCompileAndSaveAllModules });
+
+
+                PublishStatusMessage("Calling Quit...");
+                t.InvokeMember("Quit", System.Reflection.BindingFlags.InvokeMethod, null, app, null);
+
+                PublishStatusMessage("Finished");
+            }
         }
 
         private void ExportModulesTxt(string accessDatabaseFilename, string exportPath)
@@ -42,7 +124,7 @@ namespace AccessDBSerializer
                 exportPath = fi.Directory.ToString() + @"\Source\";
             }
 
-            String stubADPFilename = exportPath + fi.Name.Replace(fi.Extension, "") + "_stub" + fi.Extension;
+            string stubADPFilename = exportPath + fi.Name.Replace(fi.Extension, "") + "_stub" + fi.Extension;
 
             PublishStatusMessage("copy stub to " + stubADPFilename + "...");
 
@@ -57,7 +139,7 @@ namespace AccessDBSerializer
             File.Copy(accessDatabaseFilename, stubADPFilename, true);
 
             Type t = null;
-            Object app = CoCreate("Access.Application", ref t);
+            object app = CoCreate("Access.Application", ref t);
 
             if (app != null)
             {
@@ -177,10 +259,6 @@ namespace AccessDBSerializer
             }
         }
 
-        internal void Recompose()
-        {
-            throw new NotImplementedException();
-        }
 
         internal void PublishStatusMessage(string message)
         {
