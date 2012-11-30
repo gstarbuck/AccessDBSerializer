@@ -51,6 +51,7 @@ namespace AccessDBSerializer
         {
             SettingsView sv = new SettingsView();
             sv.ShowDialog();
+            txtFilename.GetBindingExpression(TextBox.TextProperty).UpdateTarget();
         }
     }
 }
