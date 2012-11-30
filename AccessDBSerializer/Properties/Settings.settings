@@ -1,7 +1,12 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
-  <Profiles>
-    <Profile Name="(Default)" />
-  </Profiles>
-  <Settings />
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="AccessDBSerializer.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="WorkingFolder" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\dev\MMSD\DARC\Source\Metrogro</Value>
+    </Setting>
+    <Setting Name="AccessDBFilename" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\dev\MMSD\DARC\Source\Metrogro\Metrogro.accdb</Value>
+    </Setting>
+  </Settings>
 </SettingsFile>

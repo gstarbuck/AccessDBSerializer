@@ -11,22 +11,34 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Collections;
+using System.ComponentModel;
 
 namespace AccessDBSerializer
 {
-    public class MainWindowVM
+    public class MainWindowVM : INotifyPropertyChanged
     {
 
         [DllImport("ole32.dll")]
         static extern int CLSIDFromProgID([MarshalAs(UnmanagedType.LPWStr)] string lpszProgID, out Guid pclsid);
+
+        public string AccessDBFilename
+        {
+            get { return Properties.Settings.Default.AccessDBFilename; }
+            set
+            {
+                Properties.Settings.Default.AccessDBFilename = value;
+                Properties.Settings.Default.Save();
+                PropertyChanged(this, new PropertyChangedEventArgs("AccessDBFilename"));
+            }
+        }
 
         internal void Decompose()
         {
 
             Task.Factory.StartNew(() =>
                 {
-                    string exportPath = "";
-                    string accessDatabaseFilename = @"C:\Users\gstarbuck\Documents\Visual Studio 2012\Projects\AccessDBSerializer\AccessDBSerializer\Files\MetrogroDB_new1.accdb";
+                    string exportPath = Properties.Settings.Default.WorkingFolder;
+                    string accessDatabaseFilename =  Properties.Settings.Default.AccessDBFilename;
 
                     ExportModulesTxt(accessDatabaseFilename, exportPath);
                 }
@@ -38,8 +50,8 @@ namespace AccessDBSerializer
         {
             Task.Factory.StartNew(() =>
                 {
-                    string importPath = "";
-                    string accessDatabaseFilename = @"C:\Users\gstarbuck\Documents\Visual Studio 2012\Projects\AccessDBSerializer\AccessDBSerializer\Files\MetrogroDB_new1.accdb";
+                    string importPath = Properties.Settings.Default.WorkingFolder;
+                    string accessDatabaseFilename = Properties.Settings.Default.AccessDBFilename;
 
                     ImportModulesText(accessDatabaseFilename, importPath);
                 }
@@ -52,6 +64,10 @@ namespace AccessDBSerializer
             if (importPath == "")
             {
                 importPath = fi.Directory.ToString() + @"\Source\";
+            }
+            else
+            {
+                importPath = importPath + @"\Source\";
             }
             string stubADPFilename = importPath + fi.Name.Replace(fi.Extension, "") + "_stub" + fi.Extension;
 
@@ -115,6 +131,10 @@ namespace AccessDBSerializer
                 PublishStatusMessage("Calling Quit...");
                 t.InvokeMember("Quit", System.Reflection.BindingFlags.InvokeMethod, null, app, null);
 
+                PublishStatusMessage("Cleaning up temp files...");
+                File.Copy(accessDatabaseFilename + "_", accessDatabaseFilename, true);
+                File.Delete(accessDatabaseFilename + "_");
+
                 PublishStatusMessage("Finished");
             }
         }
@@ -126,6 +146,10 @@ namespace AccessDBSerializer
             if (exportPath == "")
             {
                 exportPath = fi.Directory.ToString() + @"\Source\";
+            }
+            else
+            {
+                exportPath = exportPath + @"\Source\";
             }
 
             string stubADPFilename = exportPath + fi.Name.Replace(fi.Extension, "") + "_stub" + fi.Extension;
@@ -278,5 +302,7 @@ namespace AccessDBSerializer
             idisp = Activator.CreateInstance(t);  // create an object with the given type    
             return idisp;
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

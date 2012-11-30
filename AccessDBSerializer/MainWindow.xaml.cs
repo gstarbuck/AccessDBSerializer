@@ -46,5 +46,11 @@ namespace AccessDBSerializer
         {
             _vm.Recompose();
         }
+
+        private void btnSettings_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsView sv = new SettingsView();
+            sv.ShowDialog();
+        }
     }
 }
